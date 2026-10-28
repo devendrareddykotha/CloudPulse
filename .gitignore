@@ -1,0 +1,37 @@
+﻿# Python virtual environments
+.venv/
+.venv-clean/
+.venv314/
+
+# Python cache and test artifacts
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.coverage
+htmlcov/
+
+# Secrets and local environment configuration
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+
+# Build artifacts
+.dist/
+build/
+dist/
+*.egg-info/
+
+# Editor and operating system files
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+
+# Generated experiment results
+# Keep source code and documentation tracked, but leave generated
+# CSVs, manifests, and graphs out of Git unless intentionally selected.
+results/raw/
+results/processed/
+results/graphs/
