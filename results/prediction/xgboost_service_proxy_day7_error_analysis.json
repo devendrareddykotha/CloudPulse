@@ -1,0 +1,167 @@
+{
+  "dataset_label": "Alibaba consumerMQ_MCR selected-service proxy; units and provenance unverified",
+  "protocol": "Candidates moving-average windows 1,2,3,5,10 evaluated on chronological validation rows only; selected by lowest validation MAE; selected window then reported on chronological test rows. No test-based selection.",
+  "candidate_windows": [
+    1,
+    2,
+    3,
+    5,
+    10
+  ],
+  "selected_window_by_validation_mae": 1,
+  "validation_selected_window": {
+    "split": "validation",
+    "window_size": 1,
+    "mae_proxy_units": 275.09731132507557,
+    "rmse_proxy_units": 478.27873789198594,
+    "n_predictions": 17
+  },
+  "test_selected_window": {
+    "split": "test",
+    "window_size": 1,
+    "mae_proxy_units": 107.37031450069138,
+    "rmse_proxy_units": 167.91549888545714,
+    "n_predictions": 18
+  },
+  "test_xgboost_existing": {
+    "mae_proxy_units": 1873.3839468862186,
+    "rmse_proxy_units": 3499.1242414798644,
+    "n_predictions": 18
+  },
+  "test_moving_average_window_3_existing": {
+    "mae_proxy_units": 205.42119723283292,
+    "rmse_proxy_units": 299.8801949816415,
+    "n_predictions": 18
+  },
+  "test_targets": {
+    "source_rows": [
+      72,
+      73,
+      74,
+      75,
+      76,
+      77,
+      78,
+      79,
+      80,
+      81,
+      82,
+      83,
+      84,
+      85,
+      86,
+      87,
+      88,
+      89
+    ],
+    "timestamps": [
+      "1970-01-01 01:12:00+00:00",
+      "1970-01-01 01:13:00+00:00",
+      "1970-01-01 01:14:00+00:00",
+      "1970-01-01 01:15:00+00:00",
+      "1970-01-01 01:16:00+00:00",
+      "1970-01-01 01:17:00+00:00",
+      "1970-01-01 01:18:00+00:00",
+      "1970-01-01 01:19:00+00:00",
+      "1970-01-01 01:20:00+00:00",
+      "1970-01-01 01:21:00+00:00",
+      "1970-01-01 01:22:00+00:00",
+      "1970-01-01 01:23:00+00:00",
+      "1970-01-01 01:24:00+00:00",
+      "1970-01-01 01:25:00+00:00",
+      "1970-01-01 01:26:00+00:00",
+      "1970-01-01 01:27:00+00:00",
+      "1970-01-01 01:28:00+00:00",
+      "1970-01-01 01:29:00+00:00"
+    ],
+    "target_count": 18
+  },
+  "largest_test_xgboost_errors": [
+    {
+      "source_row": 87,
+      "timestamp": "1970-01-01 01:27:00+00:00",
+      "actual_request_rate_rps": 244.07053881794167,
+      "xgboost_prediction_rps": 10949.666015625,
+      "xgboost_error": 10705.595476807059,
+      "xgboost_absolute_error": 10705.595476807059,
+      "moving_average_prediction_rps": 506.75991077316775,
+      "ma3_absolute_error": 262.6893719552261
+    },
+    {
+      "source_row": 82,
+      "timestamp": "1970-01-01 01:22:00+00:00",
+      "actual_request_rate_rps": 1043.4853610589685,
+      "xgboost_prediction_rps": 8877.048828125,
+      "xgboost_error": 7833.563467066031,
+      "xgboost_absolute_error": 7833.563467066031,
+      "moving_average_prediction_rps": 380.9601638051698,
+      "ma3_absolute_error": 662.5251972537986
+    },
+    {
+      "source_row": 85,
+      "timestamp": "1970-01-01 01:25:00+00:00",
+      "actual_request_rate_rps": 493.010320244217,
+      "xgboost_prediction_rps": 4488.74853515625,
+      "xgboost_error": 3995.738214912033,
+      "xgboost_absolute_error": 3995.738214912033,
+      "moving_average_prediction_rps": 913.139556217456,
+      "ma3_absolute_error": 420.12923597323896
+    },
+    {
+      "source_row": 84,
+      "timestamp": "1970-01-01 01:24:00+00:00",
+      "actual_request_rate_rps": 796.041617122008,
+      "xgboost_prediction_rps": 4488.74853515625,
+      "xgboost_error": 3692.706918034242,
+      "xgboost_absolute_error": 3692.706918034242,
+      "moving_average_prediction_rps": 867.1678137985785,
+      "ma3_absolute_error": 71.12619667657054
+    },
+    {
+      "source_row": 83,
+      "timestamp": "1970-01-01 01:23:00+00:00",
+      "actual_request_rate_rps": 899.8916904713918,
+      "xgboost_prediction_rps": 4488.74853515625,
+      "xgboost_error": 3588.856844684858,
+      "xgboost_absolute_error": 3588.856844684858,
+      "moving_average_prediction_rps": 657.4364601064758,
+      "ma3_absolute_error": 242.45523036491602
+    },
+    {
+      "source_row": 73,
+      "timestamp": "1970-01-01 01:13:00+00:00",
+      "actual_request_rate_rps": 196.06326224832043,
+      "xgboost_prediction_rps": 873.132080078125,
+      "xgboost_error": 677.0688178298046,
+      "xgboost_absolute_error": 677.0688178298046,
+      "moving_average_prediction_rps": 357.34833316730845,
+      "ma3_absolute_error": 161.28507091898803
+    },
+    {
+      "source_row": 88,
+      "timestamp": "1970-01-01 01:28:00+00:00",
+      "actual_request_rate_rps": 247.90969950766305,
+      "xgboost_prediction_rps": 873.132080078125,
+      "xgboost_error": 625.222380570462,
+      "xgboost_absolute_error": 625.222380570462,
+      "moving_average_prediction_rps": 322.769551338479,
+      "ma3_absolute_error": 74.85985183081596
+    },
+    {
+      "source_row": 79,
+      "timestamp": "1970-01-01 01:19:00+00:00",
+      "actual_request_rate_rps": 214.0564721550507,
+      "xgboost_prediction_rps": 779.6658935546875,
+      "xgboost_error": 565.6094213996369,
+      "xgboost_absolute_error": 565.6094213996369,
+      "moving_average_prediction_rps": 239.80431963734068,
+      "ma3_absolute_error": 25.747847482289984
+    }
+  ],
+  "limitations": [
+    "90 total observations; small validation and test sets.",
+    "Results are proxy numeric units; validated RPS interpretation and provenance are unresolved.",
+    "Single-service proxy does not establish cluster-wide demand.",
+    "One-step-ahead walk-forward baseline uses observed prior values at each target."
+  ]
+}

@@ -1,0 +1,4 @@
+timestamp,actual_request_rate_rps,predicted_request_rate_rps,forecast_method,window_size
+2026-10-12 10:00:20+00:00,23.0,22.5,moving_average_walk_forward,2
+2026-10-12 10:00:30+00:00,30.0,24.0,moving_average_walk_forward,2
+2026-10-12 10:00:40+00:00,35.0,26.5,moving_average_walk_forward,2

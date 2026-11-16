@@ -1,0 +1,19 @@
+{
+  "mae_rps": 5.0,
+  "rmse_rps": 6.013872850889571,
+  "number_of_evaluated_predictions": 3,
+  "forecast_method": "moving_average_walk_forward",
+  "window_size": 2,
+  "input_data_path": "C:\\Users\\Sivakumar\\OneDrive\\Desktop\\member1\\prediction\\data\\raw\\synthetic_smoke_test.csv",
+  "run_metadata": {
+    "generated_at_utc": "2026-10-12T10:37:44.558205+00:00",
+    "data_label": "synthetic smoke-test (not real workload)",
+    "evaluation_strategy": "walk-forward; each target uses earlier observations only",
+    "timezone_handling": "preserved from input; no timezone is assumed"
+  },
+  "output_files": {
+    "predictions_csv": "C:\\Users\\Sivakumar\\OneDrive\\Desktop\\member1\\results\\prediction\\moving_average_predictions.csv",
+    "metrics_json": "C:\\Users\\Sivakumar\\OneDrive\\Desktop\\member1\\results\\prediction\\moving_average_metrics.json",
+    "actual_vs_predicted_png": "C:\\Users\\Sivakumar\\OneDrive\\Desktop\\member1\\results\\graphs\\moving_average_actual_vs_predicted.png"
+  }
+}

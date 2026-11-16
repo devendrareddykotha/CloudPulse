@@ -1,0 +1,4 @@
+window_size,forecast_method,mae_rps,rmse_rps,number_of_evaluated_predictions,input_data_path,dataset_label,evaluation_status,skip_reason
+2,moving_average_walk_forward,5.0,6.013872850889571,3,C:\Users\Sivakumar\OneDrive\Desktop\member1\prediction\data\raw\synthetic_smoke_test.csv,synthetic smoke test (not real workload),evaluated,
+3,moving_average_walk_forward,8.166666666666666,8.209073570683167,2,C:\Users\Sivakumar\OneDrive\Desktop\member1\prediction\data\raw\synthetic_smoke_test.csv,synthetic smoke test (not real workload),evaluated,
+4,moving_average_walk_forward,,,0,C:\Users\Sivakumar\OneDrive\Desktop\member1\prediction\data\raw\synthetic_smoke_test.csv,synthetic smoke test (not real workload),skipped,Needs at least 6 rows to produce two evaluated targets; dataset has 5.

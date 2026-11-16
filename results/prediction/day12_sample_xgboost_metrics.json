@@ -1,0 +1,74 @@
+{
+  "forecast_method": "xgboost_lagged_walk_forward_features",
+  "baseline_method": "moving_average_walk_forward_window_3",
+  "window_size": 3,
+  "validation": {
+    "xgboost": {
+      "mae_rps": 130.53387451171875,
+      "rmse_rps": 146.50199679308426,
+      "n_predictions": 23
+    },
+    "moving_average": {
+      "mae_rps": 20.0,
+      "rmse_rps": 20.0,
+      "n_predictions": 23
+    }
+  },
+  "test": {
+    "xgboost": {
+      "mae_rps": 21.238983154296875,
+      "rmse_rps": 54.955373681920584,
+      "n_predictions": 24
+    },
+    "moving_average": {
+      "mae_rps": 9.444444444444448,
+      "rmse_rps": 11.252571722516166,
+      "n_predictions": 24
+    }
+  },
+  "metadata": {
+    "generated_at_utc": "2026-11-04T18:23:19.979574+00:00",
+    "dataset_label": "day12_synthetic_sample_only",
+    "data_interpretation": "Experimental single-service consumerMQ_MCR proxy; not validated cluster-wide incoming demand.",
+    "timestamp_interpretation": "timestamp_ms offsets represented from Unix epoch UTC for compatibility; the actual wall-clock start date is unknown.",
+    "evaluation_strategy": "chronological 60/20/20 split; no random shuffling",
+    "feature_policy": "lags and rolling means use prior observations only",
+    "feature_warmup_rows_excluded": 3,
+    "feature_columns": [
+      "lag_1_rps",
+      "lag_2_rps",
+      "lag_3_rps",
+      "rolling_mean_3_rps"
+    ],
+    "sampling_interval_argument": "1min",
+    "split_rows": {
+      "train": 70,
+      "validation": 23,
+      "test": 24
+    },
+    "split_timestamps": {
+      "train_start": "2026-01-01 15:33:00+00:00",
+      "train_end": "2026-01-01 16:42:00+00:00",
+      "validation_start": "2026-01-01 16:43:00+00:00",
+      "validation_end": "2026-01-01 17:05:00+00:00",
+      "test_start": "2026-01-01 17:06:00+00:00",
+      "test_end": "2026-01-01 17:29:00+00:00"
+    },
+    "input_data_path": "C:\\Users\\Sivakumar\\OneDrive\\Desktop\\member1\\prediction\\data\\sample_experiment\\day12_synthetic_workload.csv",
+    "xgboost_parameters": {
+      "n_estimators": 100,
+      "max_depth": 2,
+      "learning_rate": 0.05,
+      "subsample": 0.9,
+      "colsample_bytree": 0.9,
+      "objective": "reg:squarederror",
+      "random_state": 42,
+      "n_jobs": 1
+    },
+    "limitations": [
+      "Only 90 one-minute observations are available for this experiment.",
+      "The selected per-service proxy is not validated as cluster-wide demand.",
+      "Metrics are exploratory and do not establish production accuracy."
+    ]
+  }
+}

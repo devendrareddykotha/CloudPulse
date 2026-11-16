@@ -1,0 +1,74 @@
+{
+  "forecast_method": "xgboost_lagged_walk_forward_features",
+  "baseline_method": "moving_average_walk_forward_window_3",
+  "window_size": 3,
+  "validation": {
+    "xgboost": {
+      "mae_rps": 1418.9666388863614,
+      "rmse_rps": 2404.4122108894235,
+      "n_predictions": 17
+    },
+    "moving_average": {
+      "mae_rps": 385.72480070445357,
+      "rmse_rps": 695.3238705522451,
+      "n_predictions": 17
+    }
+  },
+  "test": {
+    "xgboost": {
+      "mae_rps": 1873.3839468862186,
+      "rmse_rps": 3499.1242414798644,
+      "n_predictions": 18
+    },
+    "moving_average": {
+      "mae_rps": 205.42119723283292,
+      "rmse_rps": 299.8801949816415,
+      "n_predictions": 18
+    }
+  },
+  "metadata": {
+    "generated_at_utc": "2026-10-27T17:25:29.899437+00:00",
+    "dataset_label": "Alibaba consumerMQ_MCR selected-service proxy; exploratory, not cluster demand",
+    "data_interpretation": "Experimental single-service consumerMQ_MCR proxy; not validated cluster-wide incoming demand.",
+    "timestamp_interpretation": "timestamp_ms offsets represented from Unix epoch UTC for compatibility; the actual wall-clock start date is unknown.",
+    "evaluation_strategy": "chronological 60/20/20 split; no random shuffling",
+    "feature_policy": "lags and rolling means use prior observations only",
+    "feature_warmup_rows_excluded": 3,
+    "feature_columns": [
+      "lag_1_rps",
+      "lag_2_rps",
+      "lag_3_rps",
+      "rolling_mean_3_rps"
+    ],
+    "sampling_interval_argument": "1min",
+    "split_rows": {
+      "train": 52,
+      "validation": 17,
+      "test": 18
+    },
+    "split_timestamps": {
+      "train_start": "1970-01-01 00:03:00+00:00",
+      "train_end": "1970-01-01 00:54:00+00:00",
+      "validation_start": "1970-01-01 00:55:00+00:00",
+      "validation_end": "1970-01-01 01:11:00+00:00",
+      "test_start": "1970-01-01 01:12:00+00:00",
+      "test_end": "1970-01-01 01:29:00+00:00"
+    },
+    "input_data_path": "C:\\Users\\Sivakumar\\OneDrive\\Desktop\\member1\\prediction\\data\\processed\\alibaba_consumer_mcr_service_proxy.csv",
+    "xgboost_parameters": {
+      "n_estimators": 100,
+      "max_depth": 2,
+      "learning_rate": 0.05,
+      "subsample": 0.9,
+      "colsample_bytree": 0.9,
+      "objective": "reg:squarederror",
+      "random_state": 42,
+      "n_jobs": 1
+    },
+    "limitations": [
+      "Only 90 one-minute observations are available for this experiment.",
+      "The selected per-service proxy is not validated as cluster-wide demand.",
+      "Metrics are exploratory and do not establish production accuracy."
+    ]
+  }
+}

@@ -1,0 +1,95 @@
+{
+  "generated_at_utc": "2026-11-14T15:58:52.616389+00:00",
+  "workload_file": "C:\\Users\\Sivakumar\\OneDrive\\Desktop\\member1\\prediction\\data\\processed\\alibaba_consumer_mcr_service_proxy.csv",
+  "model_file": "C:\\Users\\Sivakumar\\OneDrive\\Desktop\\member1\\prediction\\models\\xgboost_service_proxy.joblib",
+  "config_file": "C:\\Users\\Sivakumar\\OneDrive\\Desktop\\member1\\prediction\\config\\scaling.example.json",
+  "scaling_config": {
+    "capacity_rps_per_replica": 100.0,
+    "capacity_basis": "ILLUSTRATIVE ONLY: unmeasured placeholder; replace with a measured capacity before use",
+    "min_replicas": 1,
+    "max_replicas": 10,
+    "cooldown_seconds": 300,
+    "max_scale_up_step": 2,
+    "max_scale_down_step": 1,
+    "max_forecast_age_seconds": 120,
+    "dry_run": true
+  },
+  "test_set": {
+    "row_count": 18,
+    "source_row_start": 72,
+    "source_row_end": 89,
+    "start_timestamp": "1970-01-01 01:12:00+00:00",
+    "end_timestamp": "1970-01-01 01:29:00+00:00"
+  },
+  "methods": {
+    "persistence": {
+      "observation_count": 18,
+      "forecast_accuracy": {
+        "mae_rps": 107.37031450069139,
+        "rmse_rps": 167.91549888545717,
+        "max_abs_error_rps": 387.42876047029245,
+        "mean_signed_bias_rps": -4.674260376416626
+      },
+      "replica_behavior": {
+        "min_replicas": 2,
+        "max_replicas": 5,
+        "mean_replicas": 3.4444444444444446,
+        "scale_up_events": 3,
+        "scale_down_events": 1,
+        "hold_events": 14,
+        "cooldown_rejections": 7,
+        "step_bounded_events": 2
+      },
+      "service_level_impact": {
+        "under_provisioned_steps": 7,
+        "over_provisioned_steps": 4
+      }
+    },
+    "moving_average": {
+      "observation_count": 18,
+      "forecast_accuracy": {
+        "mae_rps": 205.42119723283292,
+        "rmse_rps": 299.8801949816416,
+        "max_abs_error_rps": 662.5251972537985,
+        "mean_signed_bias_rps": 38.048454479267406
+      },
+      "replica_behavior": {
+        "min_replicas": 3,
+        "max_replicas": 6,
+        "mean_replicas": 3.7777777777777777,
+        "scale_up_events": 3,
+        "scale_down_events": 0,
+        "hold_events": 15,
+        "cooldown_rejections": 8,
+        "step_bounded_events": 1
+      },
+      "service_level_impact": {
+        "under_provisioned_steps": 5,
+        "over_provisioned_steps": 6
+      }
+    },
+    "xgboost": {
+      "observation_count": 18,
+      "forecast_accuracy": {
+        "mae_rps": 1873.3839468862186,
+        "rmse_rps": 3499.124241479865,
+        "max_abs_error_rps": 10705.595476807059,
+        "mean_signed_bias_rps": 1752.8493287439635
+      },
+      "replica_behavior": {
+        "min_replicas": 2,
+        "max_replicas": 6,
+        "mean_replicas": 3.5,
+        "scale_up_events": 3,
+        "scale_down_events": 1,
+        "hold_events": 14,
+        "cooldown_rejections": 11,
+        "step_bounded_events": 3
+      },
+      "service_level_impact": {
+        "under_provisioned_steps": 9,
+        "over_provisioned_steps": 6
+      }
+    }
+  }
+}
