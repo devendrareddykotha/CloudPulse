@@ -77,8 +77,8 @@ initialize_csv()
 
 
 class ExperimentRequest(BaseModel):
-    profile: Literal["steady", "spike"]
-    users: int = Field(default=10, ge=1, le=1000)
+    profile: Literal["steady", "spike", "ramp", "periodic"]
+    users: int = Field(default=10, ge=1, le=100)
     duration_seconds: int = Field(default=60, ge=1, le=3600)
     spawn_rate: int = Field(default=5, ge=1, le=1000)
 
@@ -159,6 +159,15 @@ def metrics():
 def _run_phase(profile, elapsed, duration):
     if profile == "steady":
         return "Steady load"
+    if profile == "ramp":
+        return "Ramp-up"
+    if profile == "periodic":
+        cycle_duration = duration / 4
+        return (
+            "High load"
+            if elapsed % cycle_duration >= cycle_duration / 2
+            else "Low load"
+        )
     warmup = max(1, duration // 4)
     peak = max(1, duration // 2)
     if elapsed < warmup:
@@ -559,6 +568,11 @@ def dashboard_data():
 def start_experiment(request: ExperimentRequest):
     global experiment_process, experiment_log_file
 
+    if request.profile == "periodic" and request.duration_seconds < 8:
+        raise HTTPException(
+            status_code=422,
+            detail="Periodic experiments require a duration of at least 8 seconds.",
+        )
     if request.profile == "spike" and request.duration_seconds < 3:
         raise HTTPException(
             status_code=422,

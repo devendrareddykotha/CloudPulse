@@ -250,9 +250,11 @@
           <select id="profile">
             <option value="steady">Steady load</option>
             <option value="spike">Sudden spike</option>
+            <option value="ramp">Gradual ramp-up</option>
+            <option value="periodic">Periodic load</option>
           </select>
           <div class="control-row">
-            <div><label for="users">Peak users</label><input id="users" type="number" min="1" max="1000" value="10"></div>
+            <div><label for="users">Peak users</label><input id="users" type="number" min="1" max="100" value="10"></div>
             <div><label for="duration">Duration (sec)</label><input id="duration" type="number" min="1" max="3600" value="60"></div>
           </div>
           <p id="profile-info" class="profile-info">Hold a steady number of users for the selected duration.</p>
@@ -264,7 +266,7 @@
         <section class="card experiment">
           <h3 class="card-heading">Current experiment</h3>
           <div id="experiment-details" class="empty" style="margin-top:13px">
-            <strong>No experiment running</strong>Choose a profile and start a Locust test to see live measurements.
+            <strong>No experiment running</strong>Choose a profile and start a local workload test to see live measurements.
           </div>
           <div id="experiment-rows" hidden>
             <div class="experiment-line"><span>Profile</span><strong id="current-profile">—</strong></div>
@@ -539,7 +541,7 @@
         : "";
       $("subtitle").textContent = historical
         ? "Inspecting recorded request measurements from a saved experiment."
-        : "Watch request performance as your Locust experiment runs.";
+        : "Watch request performance during a live workload experiment.";
       $("refresh-label").textContent = historical
         ? "Saved experiment · read-only"
         : "Live · refreshes every 1.5 seconds";
@@ -560,7 +562,13 @@
       $("experiment-details").hidden = hasRun;
       $("experiment-rows").hidden = !hasRun;
       if (hasRun) {
-        $("current-profile").textContent = experiment.profile === "spike" ? "Sudden spike" : "Steady load";
+        const profileLabels = {
+          steady: "Steady load",
+          spike: "Sudden spike",
+          ramp: "Gradual ramp-up",
+          periodic: "Periodic load"
+        };
+        $("current-profile").textContent = profileLabels[experiment.profile] || experiment.profile;
         $("phase").textContent = experiment.phase || (
           experiment.status === "completed" ? "Complete" :
           experiment.status === "stopped" ? "Stopped" :
@@ -688,18 +696,25 @@
       }
     });
     $("profile").addEventListener("change", () => {
-      $("profile-info").textContent = $("profile").value === "spike"
-        ? "Warm-up at low load, sudden peak, then recovery."
-        : "Hold a steady number of users for the selected duration.";
-      if ($("profile").value === "spike" && Number($("duration").value) < 3) $("duration").value = 60;
+      const profile = $("profile").value;
+      const descriptions = {
+        steady: "Hold a steady number of users for the selected duration.",
+        spike: "Warm-up at low load, sudden peak, then recovery.",
+        ramp: "Increase the active user target gradually to the selected peak.",
+        periodic: "Alternate between low and high load in four repeated phases."
+      };
+      $("profile-info").textContent = descriptions[profile];
+      const minimumDuration = profile === "periodic" ? 8 : profile === "spike" ? 3 : 1;
+      if (Number($("duration").value) < minimumDuration) $("duration").value = 60;
     });
     $("start").addEventListener("click", () => {
       const profile = $("profile").value;
       const duration = Number($("duration").value);
       const users = Number($("users").value);
-      if (!Number.isInteger(users) || users < (profile === "spike" ? 2 : 1) || users > 1000 || !Number.isInteger(duration) ||
-          duration < (profile === "spike" ? 3 : 1) || duration > 3600) {
-        $("error").textContent = "Use 1–1000 users for steady load (at least 2 for a spike) and a duration of 1–3600 seconds (at least 3 seconds for a spike).";
+      const minimumDuration = profile === "periodic" ? 8 : profile === "spike" ? 3 : 1;
+      if (!Number.isInteger(users) || users < (profile === "spike" ? 2 : 1) || users > 100 || !Number.isInteger(duration) ||
+          duration < minimumDuration || duration > 3600) {
+        $("error").textContent = "Use 1–100 users (at least 2 for a spike) and a duration of 1–3600 seconds (at least 3 seconds for a spike and 8 seconds for periodic load).";
         $("error").classList.add("visible");
         return;
       }

@@ -1,0 +1,6 @@
+sample_number,collected_at_utc,metric_timestamp_utc,requests_last_60_seconds,request_rate_rps,window_seconds,source_url,status
+1,2026-11-01T18:08:41.122452+00:00,,,,,http://localhost:8091/metrics/request-rate,error: <urlopen error [WinError 10061] No connection could be made because the target machine actively refused it>
+2,2026-11-01T18:09:45.226930+00:00,,,,,http://localhost:8091/metrics/request-rate,error: <urlopen error [WinError 10061] No connection could be made because the target machine actively refused it>
+3,2026-11-01T18:10:49.341040+00:00,,,,,http://localhost:8091/metrics/request-rate,error: <urlopen error [WinError 10061] No connection could be made because the target machine actively refused it>
+4,2026-11-01T18:11:53.456708+00:00,,,,,http://localhost:8091/metrics/request-rate,error: <urlopen error [WinError 10061] No connection could be made because the target machine actively refused it>
+5,2026-11-01T18:12:57.586715+00:00,,,,,http://localhost:8091/metrics/request-rate,error: <urlopen error [WinError 10061] No connection could be made because the target machine actively refused it>

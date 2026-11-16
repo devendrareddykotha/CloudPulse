@@ -1,0 +1,16 @@
+sample_number,collected_at_utc,metric_timestamp_utc,requests_last_60_seconds,request_rate_rps,window_seconds,source_url,status
+1,2026-11-02T17:35:08.422918+00:00,2026-11-02T17:35:08.466140+00:00,58,0.9667,60,http://localhost:8093/metrics/request-rate,success
+2,2026-11-02T17:36:08.472776+00:00,2026-11-02T17:36:08.490079+00:00,58,0.9667,60,http://localhost:8093/metrics/request-rate,success
+3,2026-11-02T17:37:08.495160+00:00,2026-11-02T17:37:08.553933+00:00,58,0.9667,60,http://localhost:8093/metrics/request-rate,success
+4,2026-11-02T17:38:08.572765+00:00,2026-11-02T17:38:08.585720+00:00,58,0.9667,60,http://localhost:8093/metrics/request-rate,success
+5,2026-11-02T17:39:08.593209+00:00,2026-11-02T17:39:08.605112+00:00,58,0.9667,60,http://localhost:8093/metrics/request-rate,success
+6,2026-11-02T17:40:08.613157+00:00,2026-11-02T17:40:08.626984+00:00,58,0.9667,60,http://localhost:8093/metrics/request-rate,success
+7,2026-11-02T17:41:08.638698+00:00,2026-11-02T17:41:08.676748+00:00,58,0.9667,60,http://localhost:8093/metrics/request-rate,success
+8,2026-11-02T17:42:08.692927+00:00,2026-11-02T17:42:08.714198+00:00,57,0.95,60,http://localhost:8093/metrics/request-rate,success
+9,2026-11-02T17:43:08.725648+00:00,2026-11-02T17:43:08.746582+00:00,58,0.9667,60,http://localhost:8093/metrics/request-rate,success
+10,2026-11-02T17:44:08.761256+00:00,2026-11-02T17:44:08.784061+00:00,57,0.95,60,http://localhost:8093/metrics/request-rate,success
+11,2026-11-02T17:45:08.797142+00:00,2026-11-02T17:45:08.816214+00:00,58,0.9667,60,http://localhost:8093/metrics/request-rate,success
+12,2026-11-02T17:46:08.826045+00:00,2026-11-02T17:46:08.846180+00:00,58,0.9667,60,http://localhost:8093/metrics/request-rate,success
+13,2026-11-02T17:47:08.858741+00:00,2026-11-02T17:47:08.890223+00:00,58,0.9667,60,http://localhost:8093/metrics/request-rate,success
+14,2026-11-02T17:48:08.906460+00:00,2026-11-02T17:48:08.924145+00:00,57,0.95,60,http://localhost:8093/metrics/request-rate,success
+15,2026-11-02T17:49:08.930948+00:00,2026-11-02T17:49:08.957089+00:00,58,0.9667,60,http://localhost:8093/metrics/request-rate,success

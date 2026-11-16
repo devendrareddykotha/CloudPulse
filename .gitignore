@@ -2,6 +2,7 @@
 .venv/
 .venv-clean/
 .venv314/
+.venv315-dashboard/
 
 # Python cache and test artifacts
 __pycache__/

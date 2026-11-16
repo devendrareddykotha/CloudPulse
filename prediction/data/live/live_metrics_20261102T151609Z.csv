@@ -1,0 +1,2 @@
+sample_number,collected_at_utc,metric_timestamp_utc,requests_last_60_seconds,request_rate_rps,window_seconds,source_url,status
+1,2026-11-02T15:16:09.947552+00:00,2026-11-02T15:16:09.989429+00:00,58,0.9667,60,http://localhost:8092/metrics/request-rate,success

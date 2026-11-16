@@ -8,10 +8,12 @@ Install the project dependencies once in the active Python environment:
 python -m pip install -r requirements.txt
 ```
 
-Start the FastAPI service in one terminal from the repository root:
+Start the dashboard in PowerShell from the repository root. The explicit
+`h11` HTTP and `asyncio` loop use Uvicorn's supported implementations without
+the optional native `httptools` parser or file watcher:
 
 ```powershell
-python -m uvicorn service.main:app --host 127.0.0.1 --port 8000
+.\.venv315-dashboard\Scripts\python.exe -m uvicorn service.main:app --host 127.0.0.1 --port 8000 --http h11 --loop asyncio --ws none
 ```
 
 Open the live dashboard in your browser:
@@ -20,13 +22,19 @@ Open the live dashboard in your browser:
 http://127.0.0.1:8000/dashboard
 ```
 
-The dashboard refreshes automatically, showing measurements from the active
-Locust run's request records. Use **Start experiment** to launch a steady-load
-or sudden-spike profile and **Stop experiment** to stop it. The backend rejects
-a second start while an experiment is active. Throughput is a rolling
-10-second request rate; request totals, failures, and latency statistics are
-cumulative for the current run. Kubernetes metrics remain unavailable until a
-real Kubernetes monitoring integration is configured.
+The dashboard refreshes automatically with measurements from the active run's
+request records. **Start experiment** supports steady, sudden-spike, gradual
+ramp-up, and periodic profiles; **Stop experiment** stops the current run. The
+dashboard uses a standard-library HTTP runner for loopback experiments, so it
+does not import Locust, gevent, httptools, or watchfiles. Local experiments are
+limited to 100 peak users. Request records and metadata are flushed as requests
+complete. Throughput is a rolling 10-second request rate; request totals,
+failures, and latency statistics are cumulative. Kubernetes metrics remain
+unavailable until a real Kubernetes monitoring integration is configured.
+
+The read-only history and comparison APIs remain available independently of
+the workload runner. Dashboard-started experiments use the local service at
+`127.0.0.1:8000`; the standard-library runner rejects non-loopback hosts.
 
 Use **Saved experiments** to select a run recorded under `results/raw/`.
 Historical selections are read-only and use the saved metadata and per-request

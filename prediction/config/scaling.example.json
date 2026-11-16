@@ -1,0 +1,11 @@
+{
+  "capacity_rps_per_replica": 100.0,
+  "capacity_basis": "ILLUSTRATIVE ONLY: unmeasured placeholder; replace with a measured capacity before use",
+  "min_replicas": 1,
+  "max_replicas": 10,
+  "cooldown_seconds": 300,
+  "max_scale_up_step": 2,
+  "max_scale_down_step": 1,
+  "max_forecast_age_seconds": 120,
+  "dry_run": true
+}

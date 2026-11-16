@@ -1,0 +1,6 @@
+sample_number,collected_at_utc,metric_timestamp_utc,requests_last_60_seconds,request_rate_rps,window_seconds,source_url,status
+1,2026-11-02T18:17:12.608819+00:00,2026-11-02T18:17:12.657406+00:00,29,0.4833,60,http://localhost:8093/metrics/request-rate,success
+2,2026-11-02T18:18:12.666209+00:00,2026-11-02T18:18:12.686944+00:00,28,0.4667,60,http://localhost:8093/metrics/request-rate,success
+3,2026-11-02T18:19:12.696873+00:00,2026-11-02T18:19:12.712496+00:00,29,0.4833,60,http://localhost:8093/metrics/request-rate,success
+4,2026-11-02T18:20:12.723766+00:00,2026-11-02T18:20:12.743789+00:00,29,0.4833,60,http://localhost:8093/metrics/request-rate,success
+5,2026-11-02T18:21:12.762290+00:00,2026-11-02T18:21:12.787727+00:00,29,0.4833,60,http://localhost:8093/metrics/request-rate,success
