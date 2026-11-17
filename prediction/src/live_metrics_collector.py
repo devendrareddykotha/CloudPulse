@@ -1,6 +1,7 @@
 import argparse
 import csv
 import json
+import os
 import time
 from datetime import datetime, timezone
 from pathlib import Path
@@ -20,9 +21,9 @@ def utc_now():
     return datetime.now(timezone.utc).isoformat()
 
 
-def collect_metrics():
+def collect_metrics(metrics_url=METRICS_URL):
     request = Request(
-        METRICS_URL,
+        metrics_url,
         headers={"Accept": "application/json"},
     )
 
@@ -56,6 +57,14 @@ def collect_metrics():
 
 def main():
     parser = argparse.ArgumentParser(description="Collect live CloudPulse request-rate metrics.")
+    parser.add_argument(
+        "--url",
+        default=os.environ.get("CLOUDPULSE_METRICS_URL") or METRICS_URL,
+        help=(
+            "request-rate endpoint URL "
+            "(default: CLOUDPULSE_METRICS_URL or the existing collector URL)"
+        ),
+    )
     parser.add_argument(
         "--samples",
         type=int,
@@ -103,12 +112,12 @@ def main():
                 "requests_last_60_seconds": "",
                 "request_rate_rps": "",
                 "window_seconds": "",
-                "source_url": METRICS_URL,
+                "source_url": arguments.url,
                 "status": "",
             }
 
             try:
-                metrics = collect_metrics()
+                metrics = collect_metrics(arguments.url)
                 row.update(metrics)
                 row["status"] = "success"
 

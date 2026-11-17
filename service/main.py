@@ -1,6 +1,6 @@
 ﻿
 import csv
-from collections import Counter
+from collections import Counter, deque
 from datetime import datetime, timezone
 import json
 import math
@@ -9,7 +9,8 @@ from pathlib import Path
 import re
 import subprocess
 import sys
-from threading import RLock
+from threading import Lock, RLock
+from time import monotonic
 from typing import Literal
 from uuid import uuid4
 
@@ -86,6 +87,8 @@ RUNNER_FILE = BASE_DIR / "testing" / "run_load_test.py"
 DASHBOARD_FILE = Path(__file__).resolve().parent / "dashboard.html"
 
 lock = RLock()
+request_rate_lock = Lock()
+request_timestamps = deque()
 total_requests = 0
 endpoint_counts = Counter()
 request_history = []
@@ -144,6 +147,22 @@ class ExperimentRequest(BaseModel):
 async def measure_requests(request: Request, call_next):
     global total_requests
 
+    path = request.url.path
+    if path not in {
+        "/health",
+        "/metrics",
+        "/metrics/request-rate",
+        "/dashboard",
+        "/docs",
+        "/openapi.json",
+    } and path != "/api" and not path.startswith("/api/"):
+        request_time = monotonic()
+        with request_rate_lock:
+            request_timestamps.append(request_time)
+            cutoff = request_time - 60
+            while request_timestamps and request_timestamps[0] < cutoff:
+                request_timestamps.popleft()
+
     start = datetime.now(timezone.utc)
     response = None
 
@@ -195,13 +214,47 @@ def health():
 
 
 @app.get("/workload")
-def workload(response: Response):
+def workload(response: Response, n: int = 0):
+    n = max(0, min(n, 100000))
     pod_name = os.getenv("HOSTNAME", "local")
     response.headers["X-Pod-Name"] = pod_name
-    return {
+    result: dict[str, object] = {
         "timestamp": datetime.now(timezone.utc).isoformat(),
         "message": "CloudPulse workload endpoint is ready",
         "pod_name": pod_name,
+    }
+    if n > 0:
+        result["work_units"] = n
+        result["result"] = sum(i * i for i in range(n))
+    return result
+
+
+@app.get("/work")
+def work(response: Response, n: int = 1000):
+    n = max(0, min(n, 100000))
+    pod_name = os.getenv("HOSTNAME", "local")
+    response.headers["X-Pod-Name"] = pod_name
+    return {
+        "work_units": n,
+        "result": sum(i * i for i in range(n)),
+        "pod_name": pod_name,
+        "timestamp": datetime.now(timezone.utc).isoformat(),
+    }
+
+
+@app.get("/metrics/request-rate")
+def request_rate():
+    now = monotonic()
+    cutoff = now - 60
+    with request_rate_lock:
+        while request_timestamps and request_timestamps[0] < cutoff:
+            request_timestamps.popleft()
+        count = len(request_timestamps)
+    return {
+        "requests_last_60_seconds": count,
+        "request_rate_rps": round(count / 60, 4),
+        "window_seconds": 60,
+        "timestamp": datetime.now(timezone.utc).isoformat(),
     }
 
 

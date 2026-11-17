@@ -1,14 +1,20 @@
+import asyncio
 import csv
+from collections import Counter, deque
 from datetime import datetime, timedelta, timezone
 import json
 from pathlib import Path
+import sys
 import tempfile
+from threading import Lock
 import unittest
 from unittest.mock import patch
+from urllib.parse import urlsplit
 
 from fastapi import Response
 
 from evaluation import collect_metrics, compare_results, measure_distribution
+from prediction.src import live_metrics_collector
 from service import main
 
 
@@ -218,6 +224,201 @@ class Phase9DistributionAndPodTests(unittest.TestCase):
                 row = next(csv.DictReader(source))
         self.assertEqual(row["pod_name"], "pod-a")
         self.assertEqual(row["request_count"], "2")
+
+
+class ServiceWorkloadCompatibilityTests(unittest.TestCase):
+    def setUp(self):
+        self.temp = tempfile.TemporaryDirectory()
+        self.log_path = Path(self.temp.name) / "request_logs.csv"
+        self.log_path.touch()
+        self.addCleanup(self.temp.cleanup)
+        self.patches = [
+            patch.object(main, "CSV_FILE", self.log_path),
+            patch.object(main, "request_timestamps", deque()),
+            patch.object(main, "request_rate_lock", Lock()),
+            patch.object(main, "total_requests", 0),
+            patch.object(main, "endpoint_counts", Counter()),
+            patch.object(main, "request_history", []),
+            patch.object(
+                main,
+                "_get_kubernetes_health",
+                return_value={
+                    "replicas": None,
+                    "cpu_percent": None,
+                    "memory_percent": None,
+                    "available": False,
+                },
+            ),
+        ]
+        for item in self.patches:
+            item.start()
+            self.addCleanup(item.stop)
+
+    def request(self, target):
+        parsed = urlsplit(target)
+        scope = {
+            "type": "http",
+            "asgi": {"version": "3.0", "spec_version": "2.3"},
+            "http_version": "1.1",
+            "method": "GET",
+            "scheme": "http",
+            "path": parsed.path,
+            "raw_path": parsed.path.encode("ascii"),
+            "query_string": parsed.query.encode("ascii"),
+            "root_path": "",
+            "headers": [(b"host", b"testserver")],
+            "client": ("testclient", 12345),
+            "server": ("testserver", 80),
+            "state": {},
+        }
+        messages = []
+        request_sent = False
+
+        async def receive():
+            nonlocal request_sent
+            if not request_sent:
+                request_sent = True
+                return {
+                    "type": "http.request",
+                    "body": b"",
+                    "more_body": False,
+                }
+            return {"type": "http.disconnect"}
+
+        async def send(message):
+            messages.append(message)
+
+        asyncio.run(main.app(scope, receive, send))
+        status = next(
+            message["status"]
+            for message in messages
+            if message["type"] == "http.response.start"
+        )
+        headers = dict(
+            next(
+                message["headers"]
+                for message in messages
+                if message["type"] == "http.response.start"
+            )
+        )
+        body = b"".join(
+            message.get("body", b"")
+            for message in messages
+            if message["type"] == "http.response.body"
+        )
+        return status, headers, json.loads(body)
+
+    def test_work_endpoint_supports_bounded_configurable_work(self):
+        status, headers, payload = self.request("/work?n=500")
+        self.assertEqual(status, 200)
+        self.assertEqual(payload["work_units"], 500)
+        self.assertEqual(payload["result"], sum(i * i for i in range(500)))
+        self.assertIn("timestamp", payload)
+        self.assertEqual(
+            headers[b"x-pod-name"].decode("utf-8"), payload["pod_name"]
+        )
+
+    def test_workload_endpoint_keeps_existing_fields_and_adds_work(self):
+        status, headers, payload = self.request("/workload?n=500")
+        self.assertEqual(status, 200)
+        self.assertEqual(payload["work_units"], 500)
+        self.assertEqual(payload["result"], sum(i * i for i in range(500)))
+        self.assertEqual(payload["message"], "CloudPulse workload endpoint is ready")
+        self.assertIn("timestamp", payload)
+        self.assertEqual(
+            headers[b"x-pod-name"].decode("utf-8"), payload["pod_name"]
+        )
+
+    def test_request_rate_excludes_health_and_api_dashboard_polls(self):
+        status, _, first_rate = self.request("/metrics/request-rate")
+        self.assertEqual(status, 200)
+        self.assertEqual(
+            {
+                key: first_rate[key]
+                for key in (
+                    "requests_last_60_seconds",
+                    "request_rate_rps",
+                    "window_seconds",
+                )
+            },
+            {
+                "requests_last_60_seconds": 0,
+                "request_rate_rps": 0,
+                "window_seconds": 60,
+            },
+        )
+        self.request("/work?n=1")
+        self.request("/workload?n=1")
+        for excluded_path in (
+            "/health",
+            "/api/dashboard",
+            "/metrics/request-rate",
+        ):
+            status, _, payload = self.request(excluded_path)
+            self.assertEqual(status, 200)
+            if excluded_path == "/metrics/request-rate":
+                self.assertEqual(payload["requests_last_60_seconds"], 2)
+
+
+class LiveMetricsCollectorUrlTests(unittest.TestCase):
+    def test_collect_metrics_accepts_an_explicit_url(self):
+        payload = {
+            "requests_last_60_seconds": 12,
+            "request_rate_rps": 0.2,
+            "window_seconds": 60,
+            "timestamp": "2026-11-17T00:00:00+00:00",
+        }
+
+        class FakeResponse:
+            status = 200
+
+            def __enter__(self):
+                return self
+
+            def __exit__(self, exc_type, exc_value, traceback):
+                return False
+
+            def read(self):
+                return json.dumps(payload).encode("utf-8")
+
+        with patch.object(
+            live_metrics_collector, "urlopen", return_value=FakeResponse()
+        ) as open_url:
+            result = live_metrics_collector.collect_metrics(
+                "http://127.0.0.1:8088/metrics/request-rate"
+            )
+        self.assertEqual(result["requests_last_60_seconds"], 12)
+        self.assertEqual(
+            open_url.call_args.args[0].full_url,
+            "http://127.0.0.1:8088/metrics/request-rate",
+        )
+
+    def test_collector_cli_uses_environment_url(self):
+        metrics = {
+            "metric_timestamp_utc": "2026-11-17T00:00:00+00:00",
+            "requests_last_60_seconds": 3,
+            "request_rate_rps": 0.05,
+            "window_seconds": 60,
+        }
+        with tempfile.TemporaryDirectory() as output_dir:
+            with (
+                patch.object(live_metrics_collector, "OUTPUT_DIR", Path(output_dir)),
+                patch.object(live_metrics_collector, "collect_metrics", return_value=metrics) as collect,
+                patch.dict(
+                    "os.environ",
+                    {"CLOUDPULSE_METRICS_URL": "http://127.0.0.1:8000/metrics/request-rate"},
+                ),
+                patch.object(sys, "argv", ["live_metrics_collector.py", "--samples", "1"]),
+            ):
+                live_metrics_collector.main()
+            output_file = next(Path(output_dir).glob("*.csv"))
+            with output_file.open(newline="", encoding="utf-8") as source:
+                row = next(csv.DictReader(source))
+        self.assertEqual(
+            collect.call_args.args[0],
+            "http://127.0.0.1:8000/metrics/request-rate",
+        )
+        self.assertEqual(row["source_url"], collect.call_args.args[0])
 
 
 class Phase12ComparisonTests(unittest.TestCase):
