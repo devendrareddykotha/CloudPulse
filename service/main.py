@@ -4,6 +4,7 @@ from collections import Counter
 from datetime import datetime, timezone
 import json
 import math
+import os
 from pathlib import Path
 import re
 import subprocess
@@ -12,9 +13,65 @@ from threading import RLock
 from typing import Literal
 from uuid import uuid4
 
-from fastapi import FastAPI, HTTPException, Request
+from fastapi import FastAPI, HTTPException, Request, Response
 from fastapi.responses import FileResponse
 from pydantic import BaseModel, Field
+
+
+_K8S_CACHE = {"ts": 0.0, "data": None}
+
+def _get_kubernetes_health() -> dict:
+    import shutil, subprocess, time
+    now = time.monotonic()
+    if _K8S_CACHE["data"] is not None and (now - _K8S_CACHE["ts"]) < 5.0:
+        return _K8S_CACHE["data"]
+    fallback = {"replicas": None, "cpu_percent": None, "memory_percent": None, "available": False}
+    if not shutil.which("kubectl"):
+        return fallback
+    try:
+        dep = subprocess.run(
+            ["kubectl", "get", "deployment", "cloudpulse-service", "-n", "cloudpulse",
+             "-o", "jsonpath={.status.readyReplicas}/{.spec.replicas}"],
+            capture_output=True, text=True, timeout=2.5, check=True
+        ).stdout.strip()
+        ready_s, spec_s = (dep.split("/") + ["0"])[:2]
+        ready = int(ready_s or 0)
+        spec = int(spec_s or 0)
+        top = subprocess.run(
+            ["kubectl", "top", "pods", "-n", "cloudpulse", "--no-headers"],
+            capture_output=True, text=True, timeout=2.5
+        )
+        cpu_m, mem_mi = 0.0, 0.0
+        if top.returncode == 0:
+            for line in top.stdout.splitlines():
+                parts = line.split()
+                if len(parts) >= 3:
+                    c, m = parts[1], parts[2]
+                    if c.endswith("m"):
+                        cpu_m += float(c[:-1])
+                    elif c.replace(".", "", 1).isdigit():
+                        cpu_m += float(c) * 1000.0
+                    if m.endswith("Mi"):
+                        mem_mi += float(m[:-2])
+                    elif m.endswith("Ki"):
+                        mem_mi += float(m[:-2]) / 1024.0
+        denom = max(ready or spec or 1, 1)
+        cpu_pct = round((cpu_m / (denom * 100.0)) * 100.0, 1)
+        mem_pct = round((mem_mi / (denom * 128.0)) * 100.0, 1)
+        data = {
+            "replicas": ready,
+            "ready_text": f"{ready}/{spec}",
+            "cpu_percent": cpu_pct,
+            "cpu_text": f"{int(round(cpu_m))}m ({cpu_pct}%)",
+            "memory_percent": mem_pct,
+            "memory_text": f"{int(round(mem_mi))}Mi ({mem_pct}%)",
+            "available": True,
+        }
+        _K8S_CACHE["ts"] = now
+        _K8S_CACHE["data"] = data
+        return data
+    except Exception:
+        return fallback
 
 app = FastAPI(
     title="CloudPulse",
@@ -138,10 +195,13 @@ def health():
 
 
 @app.get("/workload")
-def workload():
+def workload(response: Response):
+    pod_name = os.getenv("HOSTNAME", "local")
+    response.headers["X-Pod-Name"] = pod_name
     return {
         "timestamp": datetime.now(timezone.utc).isoformat(),
         "message": "CloudPulse workload endpoint is ready",
+        "pod_name": pod_name,
     }
 
 
@@ -429,12 +489,7 @@ def saved_experiment_data(run_id: str):
         },
         "request_rate": request_rate,
         "latency": latency,
-        "kubernetes": {
-            "replicas": None,
-            "cpu_percent": None,
-            "memory_percent": None,
-            "available": False,
-        },
+        "kubernetes": _get_kubernetes_health(),
         "updated_at": datetime.now(timezone.utc).isoformat(),
     }
 
@@ -477,12 +532,7 @@ def dashboard_data():
             },
             "request_rate": [],
             "latency": [],
-            "kubernetes": {
-                "replicas": None,
-                "cpu_percent": None,
-                "memory_percent": None,
-                "available": False,
-            },
+            "kubernetes": _get_kubernetes_health(),
             "updated_at": now.isoformat(),
         }
 
@@ -554,12 +604,7 @@ def dashboard_data():
         },
         "request_rate": request_rate,
         "latency": latency,
-        "kubernetes": {
-            "replicas": None,
-            "cpu_percent": None,
-            "memory_percent": None,
-            "available": False,
-        },
+        "kubernetes": _get_kubernetes_health(),
         "updated_at": now.isoformat(),
     }
 

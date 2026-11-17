@@ -15,7 +15,7 @@ spec:
     spec:
       containers:
         - name: cloudpulse-service
-          image: cloudpulse-service:v1
+          image: cloudpulse-service:v2
           imagePullPolicy: IfNotPresent
           ports:
             - containerPort: 8000

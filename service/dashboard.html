@@ -279,11 +279,11 @@
         <section class="card infra">
           <h3 class="card-heading">Kubernetes health</h3>
           <div class="infra-grid">
-            <div class="infra-item"><span>Replicas</span><strong>Unavailable</strong></div>
-            <div class="infra-item"><span>CPU usage</span><strong>Unavailable</strong></div>
-            <div class="infra-item"><span>Memory usage</span><strong>Unavailable</strong></div>
+            <div class="infra-item"><span>Replicas</span><strong id="k8s-replicas">Unavailable</strong></div>
+            <div class="infra-item"><span>CPU usage</span><strong id="k8s-cpu">Unavailable</strong></div>
+            <div class="infra-item"><span>Memory usage</span><strong id="k8s-memory">Unavailable</strong></div>
           </div>
-          <p class="infra-note">Metrics will appear when Kubernetes monitoring is connected.</p>
+          <p id="k8s-note" class="infra-note">Metrics will appear when Kubernetes monitoring is connected.</p>
         </section>
       </aside>
     </div>
@@ -581,6 +581,18 @@
       }
       drawChart("rate-chart", "rate-empty", payload.request_rate, "#39d6bd", "Requests per second");
       drawChart("latency-chart", "latency-empty", payload.latency, "#66a9ff", "Latency in milliseconds");
+            const k8s = payload.kubernetes || {};
+      if (k8s.available) {
+        $("k8s-replicas").textContent = k8s.ready_text ?? String(k8s.replicas ?? "0");
+        $("k8s-cpu").textContent = k8s.cpu_text ?? `${k8s.cpu_percent}%`;
+        $("k8s-memory").textContent = k8s.memory_text ?? `${k8s.memory_percent}%`;
+        $("k8s-note").textContent = "Connected to cloudpulse Kubernetes namespace (live metrics).";
+      } else {
+        $("k8s-replicas").textContent = "Unavailable";
+        $("k8s-cpu").textContent = "Unavailable";
+        $("k8s-memory").textContent = "Unavailable";
+        $("k8s-note").textContent = "Metrics will appear when Kubernetes monitoring is connected.";
+      }
       $("updated").textContent = `Updated ${new Date(payload.updated_at).toLocaleTimeString()} · polling every 1.5 seconds`;
     }
 
