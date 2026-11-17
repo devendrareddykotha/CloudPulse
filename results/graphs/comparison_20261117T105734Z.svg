@@ -1,0 +1,43 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1100" height="760" viewBox="0 0 1100 760">
+<rect width='100%' height='100%' fill='white'/>
+<style>text{font-family:Segoe UI,Arial,sans-serif;fill:#17212b}.grid{stroke:#d7dee5}.axis{stroke:#465563;stroke-width:1.4}.title{font-size:23px;font-weight:700}.label{font-size:14px;font-weight:600}.tick{font-size:12px}</style>
+<text class='title' x='95' y='38'>Saved CloudPulse run comparison</text>
+<text class='label' x='95' y='68'>Request rate (requests/second, 10-second bins)</text>
+<line class='grid' x1='95' y1='350.0' x2='1060' y2='350.0'/>
+<text class='tick' x='85' y='354.0' text-anchor='end'>0.0</text>
+<line class='grid' x1='95' y1='298.0' x2='1060' y2='298.0'/>
+<text class='tick' x='85' y='302.0' text-anchor='end'>17.5</text>
+<line class='grid' x1='95' y1='246.0' x2='1060' y2='246.0'/>
+<text class='tick' x='85' y='250.0' text-anchor='end'>34.9</text>
+<line class='grid' x1='95' y1='194.0' x2='1060' y2='194.0'/>
+<text class='tick' x='85' y='198.0' text-anchor='end'>52.4</text>
+<line class='grid' x1='95' y1='142.0' x2='1060' y2='142.0'/>
+<text class='tick' x='85' y='146.0' text-anchor='end'>69.9</text>
+<line class='grid' x1='95' y1='90.0' x2='1060' y2='90.0'/>
+<text class='tick' x='85' y='94.0' text-anchor='end'>87.3</text>
+<line class='axis' x1='95' y1='350' x2='1060' y2='350'/>
+<polyline points='95.0,290.5 232.9,213.7 370.7,114.2 508.6,114.5 646.4,114.2 784.3,113.6 922.1,271.4 1060.0,321.1' fill='none' stroke='#087e8b' stroke-width='2.5'/>
+<polyline points='95.0,290.5 232.9,213.7 370.7,113.6 508.6,114.5 646.4,114.2 784.3,113.9 922.1,271.7 1060.0,321.1' fill='none' stroke='#bd5b19' stroke-width='2.5'/>
+<text class='label' x='577.5' y='385' text-anchor='middle'>Elapsed time from each run start (seconds)</text>
+<text class='label' x='95' y='433'>Mean response latency (milliseconds, 10-second bins)</text>
+<line class='grid' x1='95' y1='715.0' x2='1060' y2='715.0'/>
+<text class='tick' x='85' y='719.0' text-anchor='end'>0.0</text>
+<line class='grid' x1='95' y1='663.0' x2='1060' y2='663.0'/>
+<text class='tick' x='85' y='667.0' text-anchor='end'>4.3</text>
+<line class='grid' x1='95' y1='611.0' x2='1060' y2='611.0'/>
+<text class='tick' x='85' y='615.0' text-anchor='end'>8.7</text>
+<line class='grid' x1='95' y1='559.0' x2='1060' y2='559.0'/>
+<text class='tick' x='85' y='563.0' text-anchor='end'>13.0</text>
+<line class='grid' x1='95' y1='507.0' x2='1060' y2='507.0'/>
+<text class='tick' x='85' y='511.0' text-anchor='end'>17.3</text>
+<line class='grid' x1='95' y1='455.0' x2='1060' y2='455.0'/>
+<text class='tick' x='85' y='459.0' text-anchor='end'>21.6</text>
+<line class='axis' x1='95' y1='715' x2='1060' y2='715'/>
+<polyline points='95.0,488.7 232.9,498.2 370.7,550.1 508.6,536.4 646.4,507.6 784.3,541.2 922.1,511.2 1060.0,515.8' fill='none' stroke='#087e8b' stroke-width='2.5'/>
+<polyline points='95.0,496.6 232.9,489.9 370.7,510.9 508.6,530.9 646.4,528.0 784.3,536.8 922.1,478.6 1060.0,502.7' fill='none' stroke='#bd5b19' stroke-width='2.5'/>
+<text class='label' x='577.5' y='750' text-anchor='middle'>Elapsed time from each run start (seconds)</text>
+<line x1='95' y1='63' x2='119' y2='63' stroke='#087e8b' stroke-width='3'/>
+<text class='tick' x='125' y='67'>locust_spike_k8s_hpa_20261116174859</text>
+<line x1='380' y1='63' x2='404' y2='63' stroke='#bd5b19' stroke-width='3'/>
+<text class='tick' x='410' y='67'>locust_spike_k8s_predictive_20261116175826</text>
+</svg>

@@ -1,0 +1,25 @@
+{
+  "generated_at_utc": "2026-11-17T11:03:45.596697+00:00",
+  "results": [
+    {
+      "mode": "fresh",
+      "pod_counts": {
+        "cloudpulse-service-5dc7d97854-9wl7l": 300
+      },
+      "total_responses": 300,
+      "failed_requests": 0,
+      "ideal_equal_share": 300.0,
+      "load_imbalance_ratio": 1.0
+    },
+    {
+      "mode": "pooled",
+      "pod_counts": {
+        "cloudpulse-service-5dc7d97854-9wl7l": 300
+      },
+      "total_responses": 300,
+      "failed_requests": 0,
+      "ideal_equal_share": 300.0,
+      "load_imbalance_ratio": 1.0
+    }
+  ]
+}

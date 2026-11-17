@@ -1,0 +1,3 @@
+run_id,request_count,failed_requests,duration_seconds,throughput_rps,average_latency_ms,median_latency_ms,p95_latency_ms
+locust_spike_k8s_hpa_20261116174859,4188,0,75.0,55.84,15.731868911174784,13.265,25.814249999999976
+locust_spike_k8s_predictive_20261116175826,4188,0,75.0,55.84,16.423548710601718,14.767,28.07449999999999

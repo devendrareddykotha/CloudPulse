@@ -1,0 +1,3 @@
+mode,pod_name,request_count,total_responses,failed_requests,ideal_equal_share,load_imbalance_ratio
+fresh,cloudpulse-service-5dc7d97854-9wl7l,300,300,0,300.0,1.0
+pooled,cloudpulse-service-5dc7d97854-9wl7l,300,300,0,300.0,1.0

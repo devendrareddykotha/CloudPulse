@@ -1,0 +1,2 @@
+timestamp,request_count,request_rate_rps,cpu_utilization_pct,memory_usage_bytes,replica_count,average_latency_ms,p95_latency_ms,error_count
+2026-11-17T10:52:58.782417+00:00,,,0.8,38797312,1,,,
