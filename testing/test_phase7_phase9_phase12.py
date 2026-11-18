@@ -1,21 +1,33 @@
 import asyncio
 import csv
 from collections import Counter, deque
+from contextlib import redirect_stdout
 from datetime import datetime, timedelta, timezone
+from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
+from io import StringIO
 import json
 from pathlib import Path
 import sys
 import tempfile
 from threading import Lock
+from threading import Thread
+from types import SimpleNamespace
 import unittest
 from unittest.mock import patch
 from urllib.parse import urlsplit
 
 from fastapi import Response
 
-from evaluation import collect_metrics, compare_results, measure_distribution
-from prediction.src import live_metrics_collector
+from evaluation import (
+    collect_metrics,
+    compare_results,
+    measure_distribution,
+    plot_results,
+    validate_data,
+)
+from prediction.src import live_loop, live_metrics_collector
 from service import main
+from testing import run_periodic, run_ramp, run_spike, run_steady
 
 
 REQUEST_FIELDS = [
@@ -466,6 +478,338 @@ class Phase12ComparisonTests(unittest.TestCase):
                 summaries = list(csv.DictReader(source))
         self.assertEqual(len(summaries), 2)
         self.assertEqual(summaries[1]["run_id"], ids[1])
+
+
+class EvaluationValidationAndPlotTests(unittest.TestCase):
+    def test_validate_contract_preserves_and_reports_unknown_metrics(self):
+        with tempfile.TemporaryDirectory() as temp_dir:
+            path = Path(temp_dir) / "contract.csv"
+            with path.open("w", newline="", encoding="utf-8") as output:
+                writer = csv.DictWriter(
+                    output, fieldnames=collect_metrics.CONTRACT_COLUMNS
+                )
+                writer.writeheader()
+                writer.writerow(
+                    {
+                        "timestamp": "2026-11-18T00:00:00+00:00",
+                        "request_count": 5,
+                        "request_rate_rps": 0.5,
+                        "cpu_utilization_pct": "",
+                        "memory_usage_bytes": "",
+                        "replica_count": "",
+                        "average_latency_ms": 12,
+                        "p95_latency_ms": 18,
+                        "error_count": 0,
+                    }
+                )
+            report = validate_data.validate_csv(path)
+            with redirect_stdout(StringIO()):
+                self.assertEqual(validate_data.main([str(path)]), 0)
+        self.assertTrue(report["valid"])
+        self.assertEqual(report["format"], "contract_10s")
+        self.assertEqual(report["row_count"], 1)
+        self.assertEqual(report["missing_value_counts"]["replica_count"], 1)
+        self.assertTrue(any("replica_count" in warning for warning in report["warnings"]))
+
+    def test_validate_cli_returns_failure_for_missing_input(self):
+        with tempfile.TemporaryDirectory() as temp_dir:
+            missing_path = Path(temp_dir) / "missing.csv"
+            with redirect_stdout(StringIO()):
+                self.assertEqual(validate_data.main([str(missing_path)]), 1)
+
+    def test_validate_per_second_checks_order_and_nonnegative_metrics(self):
+        with tempfile.TemporaryDirectory() as temp_dir:
+            path = Path(temp_dir) / "per_second.csv"
+            with path.open("w", newline="", encoding="utf-8") as output:
+                writer = csv.DictWriter(
+                    output, fieldnames=validate_data.PER_SECOND_COLUMNS
+                )
+                writer.writeheader()
+                for timestamp, rate in (
+                    ("2026-11-18T00:00:10+00:00", 2),
+                    ("2026-11-18T00:00:00+00:00", -1),
+                ):
+                    writer.writerow(
+                        {
+                            "run_id": "run",
+                            "scenario": "steady",
+                            "timestamp_utc": timestamp,
+                            "elapsed_second": 0,
+                            "requests_per_second": rate,
+                            "request_count": 2,
+                            "mean_response_latency_ms": "",
+                            "latency_sample_count": 0,
+                            "failures": "",
+                            "error_rate": "",
+                            "failure_sample_count": 0,
+                            "configured_peak_user_count": 1,
+                            "test_duration_seconds": 10,
+                        }
+                    )
+            report = validate_data.validate_csv(path)
+        self.assertFalse(report["valid"])
+        self.assertTrue(any("strictly chronological" in error for error in report["errors"]))
+        self.assertTrue(any("must not be negative" in error for error in report["errors"]))
+        self.assertGreater(report["missing_value_counts"]["mean_response_latency_ms"], 0)
+
+    def test_plots_contract_latency_rate_replica_and_distribution(self):
+        contract = (
+            Path(__file__).resolve().parents[1]
+            / "results"
+            / "processed"
+            / "locust_spike_k8s_hpa_20261116174859_10s_contract.csv"
+        )
+        distribution = (
+            Path(__file__).resolve().parents[1]
+            / "results"
+            / "processed"
+            / "request_distribution_20261117T110345Z.json"
+        )
+        with tempfile.TemporaryDirectory() as temp_dir:
+            contract_outputs = plot_results.plot_results(contract, temp_dir)
+            distribution_outputs = plot_results.plot_results(distribution, temp_dir)
+            contents = {
+                path.name: path.read_text(encoding="utf-8")
+                for path in (*contract_outputs, *distribution_outputs)
+            }
+        self.assertEqual(len(contract_outputs), 3)
+        self.assertEqual(len(distribution_outputs), 1)
+        self.assertTrue(any("Average latency" in svg and "P95 latency" in svg for svg in contents.values()))
+        self.assertTrue(any("Request rate" in svg for svg in contents.values()))
+        replicas_svg = next(value for key, value in contents.items() if "_replicas.svg" in key)
+        self.assertIn("Replica count", replicas_svg)
+        self.assertIn("Per-pod request distribution", contents[distribution_outputs[0].name])
+
+
+class ScenarioWrapperTests(unittest.TestCase):
+    def test_wrappers_select_scenario_and_forward_overrides(self):
+        cases = (
+            (run_steady, "steady"),
+            (run_spike, "spike"),
+            (run_ramp, "ramp"),
+            (run_periodic, "periodic"),
+        )
+        for module, scenario in cases:
+            with self.subTest(scenario=scenario):
+                with patch.object(
+                    module.subprocess,
+                    "run",
+                    return_value=SimpleNamespace(returncode=17),
+                ) as run:
+                    result = module.main(
+                        ["--users", "7", "--host", "http://127.0.0.1:8000"]
+                    )
+                command = run.call_args.args[0]
+                self.assertEqual(result, 17)
+                self.assertEqual(command[command.index("--scenario") + 1], scenario)
+                self.assertIn("--users", command)
+                self.assertIn("7", command)
+                self.assertIn("--host", command)
+
+    def test_spike_wrapper_defaults_and_respects_phase_duration_overrides(self):
+        with patch.object(
+            run_spike.subprocess,
+            "run",
+            return_value=SimpleNamespace(returncode=0),
+        ) as run:
+            run_spike.main(["--users", "8"])
+        command = run.call_args.args[0]
+        self.assertEqual(
+            [
+                command[command.index(option) + 1]
+                for option in (
+                    "--warmup-duration",
+                    "--peak-duration",
+                    "--recovery-duration",
+                )
+            ],
+            ["30", "60", "30"],
+        )
+
+        with patch.object(
+            run_spike.subprocess,
+            "run",
+            return_value=SimpleNamespace(returncode=0),
+        ) as run:
+            run_spike.main(
+                [
+                    "--duration",
+                    "20",
+                    "--warmup-duration",
+                    "5",
+                    "--peak-duration",
+                    "10",
+                    "--recovery-duration",
+                    "5",
+                ]
+            )
+        command = run.call_args.args[0]
+        self.assertEqual(command.count("--warmup-duration"), 1)
+        self.assertEqual(command[command.index("--duration") + 1], "20")
+
+
+class PredictiveLiveLoopTests(unittest.TestCase):
+    def start_metrics_server(self):
+        class MetricsHandler(BaseHTTPRequestHandler):
+            counter = 0
+
+            def do_GET(self):
+                if self.path != "/metrics/request-rate":
+                    self.send_error(404)
+                    return
+                type(self).counter += 1
+                payload = {
+                    "requests_last_60_seconds": 30 * type(self).counter,
+                    "request_rate_rps": 0.5 * type(self).counter,
+                    "window_seconds": 60,
+                    "timestamp": datetime.now(timezone.utc).isoformat(),
+                }
+                body = json.dumps(payload).encode("utf-8")
+                self.send_response(200)
+                self.send_header("Content-Type", "application/json")
+                self.send_header("Content-Length", str(len(body)))
+                self.end_headers()
+                self.wfile.write(body)
+
+            def log_message(self, format_string, *args):
+                pass
+
+        server = ThreadingHTTPServer(("127.0.0.1", 0), MetricsHandler)
+        thread = Thread(target=server.serve_forever, daemon=True)
+        thread.start()
+        self.addCleanup(server.server_close)
+        self.addCleanup(server.shutdown)
+        self.addCleanup(thread.join, 2)
+        return f"http://127.0.0.1:{server.server_port}/metrics/request-rate"
+
+    def create_config(self, root):
+        path = root / "config.yaml"
+        path.write_text(
+            "apiVersion: v1\n"
+            "kind: ConfigMap\n"
+            "metadata:\n  name: cloudpulse-config\n  namespace: cloudpulse\n"
+            "data:\n"
+            "  SAMPLING_INTERVAL_SECONDS: \"10\"\n"
+            "  FORECAST_HORIZON_SECONDS: \"60\"\n"
+            "  TARGET_RPS_PER_REPLICA: \"0.2\"\n"
+            "  MIN_REPLICAS: \"1\"\n"
+            "  MAX_REPLICAS: \"5\"\n"
+            "  WORK_DEFAULT_UNITS: \"1000\"\n",
+            encoding="utf-8",
+        )
+        return path
+
+    def test_two_dry_run_cycles_poll_real_http_and_do_not_patch(self):
+        metrics_url = self.start_metrics_server()
+        with tempfile.TemporaryDirectory() as temp_dir:
+            root = Path(temp_dir)
+            apps_api = MockAppsV1Api()
+            output = live_loop.run_loop(
+                iterations=2,
+                interval=0.01,
+                metrics_url=metrics_url,
+                predictor_name="moving_average",
+                model_path=root / "missing.joblib",
+                config_path=self.create_config(root),
+                namespace="cloudpulse",
+                deployment="cloudpulse-service",
+                output_csv=root / "dry-run.csv",
+                apps_api=apps_api,
+                sleep_fn=lambda _: None,
+            )
+            with output.open(newline="", encoding="utf-8") as source:
+                rows = list(csv.DictReader(source))
+        self.assertEqual(len(rows), 2)
+        self.assertEqual([row["observed_rps"] for row in rows], ["0.5", "1.0"])
+        self.assertEqual([row["predicted_rps"] for row in rows], ["0.5", "0.75"])
+        self.assertEqual(rows[1]["predictor_used"], "moving_average_warmup")
+        self.assertEqual(rows[0]["action"], "dry-run")
+        self.assertEqual(rows[0]["current_replicas"], "1")
+        self.assertEqual(rows[0]["target_replicas"], "3")
+        self.assertEqual(apps_api.patches, [])
+
+    def test_xgboost_predictor_uses_moving_average_during_lag_warmup(self):
+        prediction, method = live_loop._predict(
+            [2.0, 4.0],
+            [
+                datetime(2026, 11, 18, 12, 0, tzinfo=timezone.utc),
+                datetime(2026, 11, 18, 12, 0, 10, tzinfo=timezone.utc),
+            ],
+            "xgboost",
+            None,
+            10,
+            datetime(2026, 11, 18, 12, 0, 11, tzinfo=timezone.utc),
+        )
+        self.assertEqual(prediction, 3.0)
+        self.assertEqual(method, "moving_average_xgboost_warmup")
+
+    def test_live_mode_scales_only_when_no_matching_hpa_exists(self):
+        metrics_url = self.start_metrics_server()
+
+        class EmptyAutoscalingApi:
+            def list_namespaced_horizontal_pod_autoscaler(self, namespace):
+                return SimpleNamespace(items=[])
+
+        class MatchingHpaApi:
+            def list_namespaced_horizontal_pod_autoscaler(self, namespace):
+                target = SimpleNamespace(name="cloudpulse-service")
+                return SimpleNamespace(
+                    items=[SimpleNamespace(spec=SimpleNamespace(scale_target_ref=target))]
+                )
+
+        with tempfile.TemporaryDirectory() as temp_dir:
+            root = Path(temp_dir)
+            config = self.create_config(root)
+            apps_api = MockAppsV1Api()
+            live_loop.run_loop(
+                iterations=1,
+                interval=0.01,
+                metrics_url=metrics_url,
+                predictor_name="moving_average",
+                model_path=root / "missing.joblib",
+                config_path=config,
+                namespace="cloudpulse",
+                deployment="cloudpulse-service",
+                live=True,
+                output_csv=root / "live.csv",
+                apps_api=apps_api,
+                autoscaling_api=EmptyAutoscalingApi(),
+            )
+            self.assertEqual(len(apps_api.patches), 1)
+
+            blocked_api = MockAppsV1Api()
+            blocked_output = live_loop.run_loop(
+                iterations=1,
+                interval=0.01,
+                metrics_url=metrics_url,
+                predictor_name="moving_average",
+                model_path=root / "missing.joblib",
+                config_path=config,
+                namespace="cloudpulse",
+                deployment="cloudpulse-service",
+                live=True,
+                output_csv=root / "blocked.csv",
+                apps_api=blocked_api,
+                autoscaling_api=MatchingHpaApi(),
+            )
+            with blocked_output.open(newline="", encoding="utf-8") as source:
+                row = next(csv.DictReader(source))
+        self.assertEqual(blocked_api.patches, [])
+        self.assertEqual(row["action"], "blocked_hpa")
+        self.assertIn("Matching HPA is active", row["reason"])
+
+
+class MockAppsV1Api:
+    def __init__(self):
+        self.replicas = 1
+        self.patches = []
+
+    def read_namespaced_deployment_scale(self, name, namespace):
+        return SimpleNamespace(spec=SimpleNamespace(replicas=self.replicas))
+
+    def patch_namespaced_deployment_scale(self, name, namespace, body):
+        self.patches.append((name, namespace, body))
+        self.replicas = body["spec"]["replicas"]
 
 
 if __name__ == "__main__":
